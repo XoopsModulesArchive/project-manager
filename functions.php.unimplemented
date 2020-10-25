@@ -1,0 +1,1072 @@
+<?php
+/*-----------------------------------------------------------------------**
+---------------------------------------------------------------------------
+IPM (Incyte Project Manager)
+PHP based project tracking tool 
+Copyright (c) 2001 by phlux
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+---------------------------------------------------------------------------
+**-----------------------------------------------------------------------*/
+// FUNCTION LIST
+function addtask($id, $return) {
+// This function builds the form for adding a task to a project.
+// When this form is submitted the variables are passed to the function
+// "addtaskaction()"
+//dbconnect();
+global $message;
+$query = "SELECT * FROM IPM_projects WHERE id=$id";
+$result = mysql_query($query);
+$add = mysql_fetch_array($result);
+$query2 = "SELECT * FROM IPM_users";
+$result2 = mysql_query($query2);
+$query3 = "SELECT task_id, title FROM IPM_tasks WHERE id=$id";
+$result3 = mysql_query($query3);
+?>
+<form action=index.php method=post>
+<table border=0 cellspacing=0 cellpadding=2 width=90% align=center>
+<tr>
+<td width=100% colspan=2 class=header align=left>
+<b>Add Task</b>
+</td>
+</tr>
+<tr>
+<td width=38% align=right class=darker>
+<b>Project Name: </b>
+</td>
+<td class=lighter width=62%>
+<a class=biglink href=index.php?op=projectdetail&id=<?=$id?>><?=$add[name]?></a>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Task Name: </b>
+</td>
+<td class=lighter>
+<input name=title type=text>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Assigned To: </b>
+</td>
+<td class=lighter>
+<select name=person size=1>
+<option value="1" selected>Choose a User</option>
+<option value="1">-------------</option>
+<? while ($users=mysql_fetch_array($result2)) {
+echo "<option value=$users[id]>$users[$listdisplay]</option>";
+}?>
+</select>
+<input type=checkbox name=notify value=1 checked > Notify user?
+</td> 
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Quoted Hours: </b>
+</td>
+<td class=lighter>
+<input name=hours size=10 maxlength=10 type=text>
+<input type=checkbox name=billable value=1 checked > Billable? 
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Priority: </b>
+</td>
+<td class=lighter>
+<select name=priority size=1>
+<option value="1" selected>Low</option>
+<option value="5">Medium</option>
+<option value="10">High</option>
+</select>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Subtask of: </b>
+</td>
+<td class=lighter>
+<select name=parent_id size=1>
+<option value="0" selected>TOP LEVEL (none)</option>
+<option value="0">-------------------------------------</option>
+<? task_dropdown($id); ?>
+</select>
+</td>
+</tr>
+<tr valign=top>
+<td align=right class=darker>
+<b>Description: </b>
+</td>
+<td class=lighter>
+<textarea cols=40 rows=4 name=description></textarea>
+</td>
+</tr>
+<tr valign=top>
+<tr>
+<td class=header align=center colspan=2>
+<input class=button type=reset> <input class=button type=submit value="Add Task">
+</td>
+</tr>
+</table>
+<input type=hidden name=return value=<?=$return?>>
+<input type=hidden name=op value=addtaskaction><input type=hidden name=id value=<?=$id?>>
+</form>
+<?
+}
+function addtaskaction($id, $return, $title, $hours, $priority, $description, $person, $notify, $billable, $parent_id) {
+// This function takes the results from the function "addtask()"
+// and inserts them into the database, then displays the results 
+//dbconnect();
+$result = mysql_query("INSERT INTO IPM_tasks VALUES (NULL,'$id','$title','$hours','$enddate','$description','1','$person','$billable','0','$parent_id','$priority')");
+if ($notify == "1") {
+$query="SELECT email FROM IPM_users WHERE id='$person'";
+$result=mysql_query($query);
+$address=mysql_fetch_row($result);
+$query2="SELECT name FROM IPM_projects WHERE id='$id'";
+$result2=mysql_query($query2);
+$project=mysql_fetch_row($result2);
+$message="A new task has been assigned to you in IPM. \n\n"
+." PROJECT: $project[0] \n"
+." TASK NAME: $title \n"
+." HOURS: $hours \n"
+." PRIORITY: $priority \n"
+."DESCRIPTION: $description \n" 
+."Refer to $ipmhomepage for more information. \n\n" 
+."Thanks"; 
+mail("$address[0]", "A new task has been assigned to you.", "$message", "From: $ipmaddress", "-f$ipmaddress");
+}
+if ($result) {
+if (strcmp($return,"projectview") == 0) header("Location: index.php?op=projectdetail&id=$id");
+else header("Location: index.php?op=mytasks&name=$return");
+} else {
+echo mysql_error(); 
+message("Error Adding Task");
+}
+}
+function edittask($task_id) {
+// This function build the menu for editing a pre-existing task in a project.
+// When submitted, the variables are passed to the function "edittaskaction()".
+//dbconnect();
+global $message;
+if ($message) message("$message");
+$query = "SELECT * FROM IPM_tasks where task_id=$task_id";
+$result = mysql_query($query);
+while ($edit=mysql_fetch_array($result)) { 
+$query2 = "SELECT name FROM IPM_projects where id=$edit[id]";
+$result2 = mysql_query($query2);
+$list=mysql_fetch_array($result2);
+$query3 = "SELECT * FROM IPM_users";
+$result3 = mysql_query($query3);
+$query4 = "SELECT * FROM IPM_users WHERE id='$edit[person]'";
+$result4 = mysql_query($query4);
+$currentuser = mysql_fetch_array($result4);
+$query5 = "SELECT * FROM IPM_comments WHERE task_id='$task_id'";
+$result5 = mysql_query($query5);
+$query6 = "SELECT * FROM IPM_task_depend WHERE child_id='$task_id'";
+$result6 = mysql_query($query6);
+?>
+<form action=index.php method=post>
+<table cellspacing=0 cellpadding=2 border=0 bordercolor=000000 align=center width=90%>
+<tr>
+<td width=38% class=header align=left>
+<b>Edit Task</b>
+</td>
+<td width=62% class=header align=right>
+[<a class=headerlink href=index.php?op=addcomment&task_id=<?=$task_id?>>ADD COMMENT</a>]
+</td>
+</tr>
+<tr>
+<td width=38% align=right class=darker>
+<b>Project Name: </b>
+</td>
+<td width=62% class=lighter>
+<a class=biglink href=index.php?op=projectdetail&id=<?=$edit[id]?>><?=$list[name]?></a>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Task Name: </b>
+</td>
+<td class=lighter>
+<input value='<?=$edit[title]?>' name=title size=50 maxlength=80 type=text>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Assigned To: </b>
+</td>
+<td class=lighter>
+<select name=person size=1>
+<option value="<?=$edit[person]?>" selected><?=$currentuser[$listdisplay]?></option>
+<option value="<?=$edit[person]?>">-------------</option>"
+<? while ($users=mysql_fetch_array($result3)) {
+echo "<option value=$users[id]>$users[$listdisplay]</option>";
+}?>
+</select>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Quoted Hours: </b>
+</td>
+<td class=lighter>
+<input type=text name=hours size=10 maxlength=10 value=<?=$edit[hours]?>>
+<?if ($edit[billable] == 1) {
+echo "<input type=checkbox checked name=billable value=1> Billable?";
+} else {
+echo "<input type=checkbox name=billable value=1> Billable?";
+}?>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Priority: </b>
+</td>
+<td class=lighter>
+<select name=priority size=1>
+<option value=1 <? if ($edit[priority] <= 3) echo "selected" ?>>Low</option>
+<option value=5 <? if ($edit[priority] > 3 && $edit[priority] <= 6) echo "selected" ?>>Medium</option>
+<option value=10 <? if ($edit[priority] > 6) echo "selected" ?>>High</option>
+}?>
+</select>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+<b>Subtask of: </b>
+</td>
+<td class=lighter>
+<select name=parent_id size=1>
+<?
+if ($parent_task=get_parent($task_id)) {
+$parent = get_task_info($parent_task[0]);
+echo "<option value=$parent[task_id] selected>$parent[title]</option>"
+."<option value=$parent[task_id]>-------------------------------------</option>"
+."<option value=\"0\">TOP LEVEL (none)</option>"
+."<option value=$parent[task_id]>-------------------------------------</option>";
+} else {
+echo "<option value=\"0\" selected>TOP LEVEL (none)</option>"
+."<option value=\"0\">-------------------------------------</option>";
+} 
+task_dropdown($edit[id]);
+?>
+</select>
+</td>
+</tr>
+<tr valign=top>
+<td class=darker align=right>
+<b>Description: </b>
+</td>
+<td class=lighter>
+<textarea cols=40 rows=4 name=description><?=$edit[description]?></textarea>
+</td>
+</tr>
+</tr>
+<tr>
+<td class=header align=center colspan=2><input class=button value=Restore type=reset> <input class=button type=submit value="Update Task">
+</td>
+</tr>
+</table>
+<input type=hidden name=op value=edittaskaction>
+<input type=hidden name=id value="<?=$edit[id]?>">
+<input type=hidden name=task_id value="<?=$task_id?>">
+</form>
+<? if ($edit[comments]=="1") display_comments($task_id); 
+} // end while
+} // end function ...a bit confusing down here =) 
+function edittaskaction($task_id, $id, $title, $hours, $priority, $description, $person, $billable, $parent_id) {
+// This function takes the variables from edittask() and makes the changes
+// to the database where neccessary, then displays the results.
+//dbconnect();
+if ($parent_id == $task_id) {
+$error=1;
+$errortext.="<BR />YOU CAN NOT LINK A TASK TO ITSELF!";
+}
+$children=get_children($task_id, 2);
+for ($x=0; $x<sizeof($children); $x++) {
+if ($children[$x][0] == $parent_id) {
+$error=1;
+$errortext.="<BR />YOU CAN NOT LINK A TASK TO ONE OF ITS CHILDREN!";
+}
+}
+if (!$error) {
+$query = "UPDATE IPM_tasks SET title='$title', hours='$hours', priority='$priority', description='$description', person='$person', billable='$billable', parent_id='$parent_id' WHERE task_id='$task_id'";
+$result = mysql_query($query);
+}
+projectdetail($id);
+if ($result) {
+message("Task Updated Successfully");
+} else {
+message("Error Updating Task $errortext");
+}
+} 
+function confirmdeletetask($task_id, $return) {
+// This function may save your ass. It pops up to make sure you want to delete
+// a task. It waits for an answer. If the answer is "yes" then the id is passed
+// to the "deletetask()" function. Otherwise you are returned to the project
+// detail page
+//dbconnect();
+global $id;
+if (get_children($task_id,2)) {
+$warn="<b>WARNING</b><BR />This task contains child tasks. Deleting it will delete all children as well!<BR />";
+}
+$query = "SELECT title FROM IPM_tasks WHERE task_id=$task_id";
+$result = mysql_query($query);
+$list = mysql_fetch_array($result);
+?>
+<table width=40% border=1 bordercolor=black cellspacing=0 cellpadding=4 align=center>
+<tr>
+<td class=header align=center>
+<? echo $warn;?>Are you sure you want to delete the task <b><?=$list[title]?></b>?
+</td>
+</tr>
+<tr>
+<td align=center class=message>
+<a class=smaller href=index.php?op=deletetask&task_id=<?=$task_id?>&id=<?=$id?>&return=<?=$return?>>[YES]</a>
+<a href=index.php?op=projectdetail&id=<?=$id?>>[NO]</a>
+</td>
+</tr>
+</table>
+<?
+} 
+function deletetask($task_id, $return) {
+// This function deletes a task flat out. You've already been warned at this point.
+authenticate();
+dbconnect();
+global $id;
+$query = "DELETE FROM IPM_tasks WHERE task_id=$task_id";
+$result = mysql_query($query);
+$query2 = "DELETE FROM IPM_tasks WHERE parent_id=$task_id";
+$result2 = mysql_query($query2);
+//projectdetail($id);
+if ($result) {
+if (strcmp($return,"projectview") == 0) header("Location: index.php?op=projectdetail&id=$id");
+else header("Location: index.php?op=mytasks&return=$return");
+} else {
+message("Error Deleting Task");
+}
+}
+////////// COMMENT RELATED FUNCTIONS ////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+function addcomment($task_id) {
+// This function builds the form for adding a comment to a task.
+// When this form is submitted the variables are passed to the function
+// "addcommentaction()"
+//dbconnect();
+global index.php, $message;
+$query="SELECT title FROM IPM_tasks WHERE task_id='$task_id'";
+$result=mysql_query($query);
+$task=mysql_fetch_row($result);
+?>
+<form action=<?=index.php?> method=post>
+<table border=0 cellspacing=0 cellpadding=2 width=90% align=center>
+<tr>
+<td width=100% colspan=2 class=header align=left>
+<b>Adding Comment To "<?=$task[0]?>"</b>
+</td>
+</tr>
+<tr valign=top>
+<td width=38% align=right class=darker>
+<b>Comment: </b>
+</td>
+<td width=62% class=lighter>
+<textarea cols=60 rows=10 name=comment></textarea>
+</td>
+</tr>
+<tr>
+<td class=header align=center colspan=2>
+<input class=button type=reset> <input class=button type=submit value="Add Comment">
+</td>
+</tr>
+</table>
+<input type=hidden name=op value=addcommentaction><input type=hidden name=task_id value=<?=$task_id?>>
+</form>
+<?
+}
+function addcommentaction($task_id, $comment) {
+// This function takes the results from the function "addcomment()"
+// and inserts them into the database, then displays the results 
+//dbconnect();
+$date=date("YmdHis");
+$formatted_comment=addslashes($comment);
+$flag_comments_on = mysql_query("UPDATE IPM_tasks SET comments='1' WHERE task_id='$task_id'");
+if (mysql_query("INSERT INTO IPM_comments VALUES (NULL,'$task_id','$user_id','$date','$formatted_comment')")) {
+$message="Comment Added Successfully";
+} else {
+$message="Error Adding Comment";
+}
+edittask($task_id);
+}
+function editcomment($comment_id, $task_id) {
+$user_id=authenticate();
+dbconnect();
+global $message;
+// get comment's owner
+$query="SELECT user,comment FROM IPM_comments WHERE comment_id='$comment_id'";
+$result=mysql_query($query);
+if ($owner=mysql_fetch_array($result)) {
+$auth_user=$owner[user];
+$formatted_comment=str_replace("<br />", "\n", $owner[comment]);
+$formatted_comment=stripslashes($formatted_comment);
+}
+// get the user's info
+$query="SELECT * FROM IPM_users WHERE id='$user_id'";
+$result=mysql_query($query);
+if ($user=mysql_fetch_array($result)) {
+$current_user=$user[id];
+$current_role=$user[role];
+}
+// only let the comment owner or an admin edit a comment
+if (($auth_user == $current_user) || ($current_role=="1")) {
+?>
+<form action=<?=index.php?> method=post>
+<table border=0 cellspacing=0 cellpadding=2 width=90% align=center>
+<tr>
+<td width=100% colspan=2 class=header align=left>
+<b>Editing Comment</b>
+</td>
+</tr>
+<tr valign=top>
+<td width=38% align=right class=darker>
+<b>Comment: </b>
+</td>
+<td width=62% class=lighter>
+<textarea cols=60 rows=10 name=comment><?=$formatted_comment?></textarea>
+</td>
+</tr>
+<tr>
+<td class=header align=center colspan=2>
+<input class=button type=reset> <input class=button type=submit value="Update Comment">
+</td>
+</tr>
+</table>
+<input type=hidden name=op value=editcommentaction>
+<input type=hidden name=comment_id value=<?=$comment_id?>>
+<input type=hidden name=task_id value=<?=$task_id?>>
+</form>
+<?
+} else {
+$message="You are not allowed to edit this comment";
+edittask($task_id);
+}
+}
+function editcommentaction($comment_id, $comment, $task_id) {
+//dbconnect();
+// get comment's owner
+$query="SELECT user,comment FROM IPM_comments WHERE comment_id='$comment_id'";
+$result=mysql_query($query);
+if ($owner=mysql_fetch_array($result)) {
+$auth_user=$owner[user];
+}
+// get the user's info
+$query="SELECT * FROM IPM_users WHERE id='$user_id'";
+$result=mysql_query($query);
+if ($user=mysql_fetch_array($result)) {
+$current_user_id=$user[id];
+$current_user=$user[$listdisplay];
+$current_role=$user[role];
+}
+if (($auth_user==$current_user_id) || ($current_role=="1")) {
+$date=date("M j, Y - h:i:s A");
+$formatted_comment=addslashes($comment);
+$formatted_comment .="<br /><br /> <i>**EDITED BY $current_user -- [$date]</i>";
+if (mysql_query("UPDATE IPM_comments SET comment='$formatted_comment' WHERE comment_id='$comment_id'")) {
+$message="Comment Updated Successfully";
+} else {
+$message="Error Updating Comment";
+}
+edittask($task_id);
+} else {
+$message="You are not allowed to edit this comment";
+edittask($task_id); 
+}
+}
+function deletecomment($comment_id, $task_id) {
+//dbconnect();
+global $message;
+// get comment's owner
+$query="SELECT user,comment FROM IPM_comments WHERE comment_id='$comment_id'";
+$result=mysql_query($query);
+if ($owner=mysql_fetch_array($result)) {
+$auth_user=$owner[user];
+$formatted_comment=str_replace("<br />", "\n", $owner[comment]);
+$formatted_comment=stripslashes($formatted_comment);
+}
+// get the user's info
+$query="SELECT * FROM IPM_users WHERE id='$user_id'";
+$result=mysql_query($query);
+if ($user=mysql_fetch_array($result)) {
+$current_user=$user[id];
+$current_role=$user[role];
+}
+// only let the comment owner or an admin edit a comment
+if (($auth_user==$current_user) || ($current_role=="1")) {
+include ("header.php");
+$message="Are you sure you want to delete this comment?<BR /><BR />"
+."[<a href=index.php?op=deletecommentaction&comment_id=$comment_id&task_id=$task_id>YES</a>] -- "
+."[<a href=index.php?op=edittask&task_id=$task_id>NO</a>]";
+message($message); 
+} else {
+$message="You are not allowed to delete this comment";
+edittask($task_id); 
+}
+}
+function deletecommentaction($comment_id, $task_id) {
+//dbconnect();
+global $message;
+// get comment's owner
+$query="SELECT user,comment FROM IPM_comments WHERE comment_id='$comment_id'";
+$result=mysql_query($query);
+if ($owner=mysql_fetch_array($result)) {
+$auth_user=$owner[user];
+$formatted_comment=str_replace("<br />", "\n", $owner[comment]);
+$formatted_comment=stripslashes($formatted_comment);
+}
+// get the user's info
+$query="SELECT * FROM IPM_users WHERE id='$user_id'";
+$result=mysql_query($query);
+if ($user=mysql_fetch_array($result)) {
+$current_user=$user[id];
+$current_role=$user[role];
+}
+// only let the comment owner or an admin edit a comment
+if (($auth_user==$current_user) || ($current_role=="1")) {
+if (mysql_query("DELETE FROM IPM_comments WHERE comment_id='$comment_id'")) {
+$message="Comment Deleted";
+} else {
+$message="Error Deleting Comment";
+}
+// get number of comments left, if 0 then un-flag comments for the task
+$query="SELECT comment_id FROM IPM_comments WHERE task_id='$task_id'";
+$result=mysql_query($query);
+if (!$list=mysql_fetch_array($result)) {
+mysql_query("UPDATE IPM_tasks SET comments='0' WHERE task_id='$task_id'");
+}
+edittask($task_id);
+}
+}
+////////// PROJECT RELATED FUNCTIONS ////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+function addproject() {
+// This function builds the form for adding a new project.
+// When this form is submitted the variables are passed to the function
+// "addprojectaction()" 
+$today=date('j');
+$thismonthname=date('M');
+$thismonthvalue=date('n');
+$thisyear=date('Y'); 
+?>
+<form action=<?=index.php?> method=post>
+<table cellspacing=0 cellpadding=2 border=0 bordercolor=000000 align=center width=90%>
+<tr>
+<td colspan=2 width=100% align=left class=header>
+<b>Add New Project</b>
+</td>
+</tr>
+<tr>
+<td class=darker width=38% align=right>
+<b>Project Name: </b>
+</td>
+<td class=lighter width=62%>
+<input name=name type=text size=40>
+</td>
+</tr>
+<tr>
+<td class=darker align=right>
+<b>Start Date: </b>
+</td>
+<td class=lighter>
+<select name=startmonth size=1>
+<option value=<?=$thismonthvalue?> selected><?=$thismonthname?></option>
+<option value=<?=$thismonthvalue?>>-----</option>
+<option value=01>Jan</option>
+<option value=02>Feb</option>
+<option value=03>Mar</option>
+<option value=04>Apr</option>
+<option value=05>May</option>
+<option value=06>Jun</option>
+<option value=07>Jul</option>
+<option value=08>Aug</option>
+<option value=09>Sep</option>
+<option value=10>Oct</option>
+<option value=11>Nov</option>
+<option value=12>Dec</option>
+</select>
+<select name=startday size=1>
+<option value=<?=$today?> selected><?=$today?></option>
+<option value=<?=$today?>>-----</option>
+<option value=01>01</option>
+<option value=02>02</option>
+<option value=03>03</option>
+<option value=04>04</option>
+<option value=05>05</option>
+<option value=06>06</option>
+<option value=07>07</option>
+<option value=08>08</option>
+<option value=09>09</option>
+<option value=10>10</option>
+<option value=11>11</option>
+<option value=12>12</option>
+<option value=13>13</option>
+<option value=14>14</option>
+<option value=15>15</option>
+<option value=16>16</option>
+<option value=17>17</option>
+<option value=18>18</option>
+<option value=19>19</option>
+<option value=20>20</option>
+<option value=21>21</option>
+<option value=22>22</option>
+<option value=23>23</option>
+<option value=24>24</option>
+<option value=25>25</option>
+<option value=26>26</option>
+<option value=27>27</option>
+<option value=28>28</option> 
+<option value=29>29</option>
+<option value=30>30</option>
+<option value=31>31</option> 
+</select>
+<select name=startyear size=1>
+<option value=<?=$thisyear?> selected><?=$thisyear?></option>
+<option value=<?$thisyear?>>-----</option> 
+<option value=2001>2001</option>
+<option value=2002>2002</option>
+<option value=2003>2003</option>
+</select>
+</td>
+</tr>
+<tr>
+<td class=darker align=right>
+<b>Deadline: </b>
+</td>
+<td class=lighter>
+<select name=endmonth size=1>
+<option value=<?=$thismonthvalue?> selected><?=$thismonthname?></option>
+<option value=<?=$thismonthvalue?>>-----</option>
+<option value=01>Jan</option>
+<option value=02>Feb</option>
+<option value=03>Mar</option>
+<option value=04>Apr</option>
+<option value=05>May</option>
+<option value=06>Jun</option>
+<option value=07>Jul</option>
+<option value=08>Aug</option>
+<option value=09>Sep</option>
+<option value=10>Oct</option>
+<option value=11>Nov</option>
+<option value=12>Dec</option>
+</select>
+<select name=endday size=1>
+<option value=<?=$today?> selected><?=$today?></option>
+<option value=<?=$today?>>-----</option>
+<option value=01>01</option>
+<option value=02>02</option>
+<option value=03>03</option>
+<option value=04>04</option>
+<option value=05>05</option>
+<option value=06>06</option>
+<option value=07>07</option>
+<option value=08>08</option>
+<option value=09>09</option>
+<option value=10>10</option>
+<option value=11>11</option>
+<option value=12>12</option>
+<option value=13>13</option>
+<option value=14>14</option>
+<option value=15>15</option>
+<option value=16>16</option>
+<option value=17>17</option>
+<option value=18>18</option>
+<option value=19>19</option>
+<option value=20>20</option>
+<option value=21>21</option>
+<option value=22>22</option>
+<option value=23>23</option>
+<option value=24>24</option>
+<option value=25>25</option>
+<option value=26>26</option>
+<option value=27>27</option>
+<option value=28>28</option> 
+<option value=29>29</option>
+<option value=30>30</option>
+<option value=31>31</option> 
+</select>
+<select name=endyear size=1>
+<option value=<?=$thisyear?> selected><?=$thisyear?></option>
+<option value=<?=$thisyear?>>-----</option> 
+<option value=2001>2001</option>
+<option value=2002>2002</option>
+<option value=2003>2003</option>
+</select>
+</td>
+</tr>
+<tr align=top>
+<td class=darker align=right>
+<b>Comments: </b>
+</td>
+<td class=lighter>
+<textarea cols=40 rows=4 name=comments></textarea>
+</td>
+</tr>
+<tr>
+<td class=header align=center colspan=2>
+<input class=button type=reset> <input class=button type=submit value="Add Project">
+</td>
+</tr>
+</table>
+<input type=hidden name=op value=addprojectaction>
+</form>
+<?
+}
+function addprojectaction($name, $startmonth, $startday, $startyear, $endmonth, $endday, $endyear, $comments) {
+// This function receives the variables sent by "addproject()"
+// then it adds the project to the database.
+//dbconnect();
+$startdate="$startyear.$startmonth.$startday";
+$enddate="$endyear.$endmonth.$endday";
+//Format DB input
+$Fname=addslashes("$name");
+$Fcomments=addslashes("$comments");
+$result = mysql_query("insert into IPM_projects values (NULL,'$Fname','$startdate','$enddate','$Fcomments','0','0000-00-00')");
+addproject();
+if ($result) {
+message("Project \"$name\" Added Successfully");
+} else {
+message("Error Adding Project");
+}
+}
+function confirmprojectdelete($id) {
+// This function may save your ass someday. When you try to delete a project,
+// this function is called. It warns you, that the function and all associated tasks
+// are about to be deleted. Then it give the choice of continuing or going back to the
+// project list.
+//dbconnect();
+$query = "SELECT name FROM IPM_projects WHERE id=$id";
+$result = mysql_query($query);
+$list = mysql_fetch_array($result);
+?>
+<table align=center width=40% border=1 bordercolor=black cellspacing=0 cellpadding=4>
+<tr>
+<td class=header align=center>
+Are you sure you want to delete the <b><?=$list[name]?></b> project?
+</td>
+</tr>
+<tr>
+<td class=importantmessage align=center>
+ALL TASKS AND ASSOCIATED INFO WILL BE DELETED
+</td>
+</tr>
+<tr>
+<td align=center class=message>
+<a class=smaller href=<?=index.php?>?op=deleteproject&id=<?=$id?>>[YES]</a> :: <a href=<?=index.php?>?op=listprojects>[NO]</a>
+</td>
+</tr>
+</table>
+<?
+} 
+function deleteproject($id) {
+// We warned you. This function deletes a project and takes all of its tasks with it.
+//dbconnect();
+$result1 = mysql_query("delete FROM IPM_projects where id=$id");
+$result2 = mysql_query("delete FROM IPM_tasks where id=$id");
+include ("config.php");
+listprojects();
+if ($result1 && $result2) {
+message("Project Deleted");
+} else {
+message("Error Deleting Project");
+}
+}
+function editproject($id) {
+// This function builds the form for editing a pre-existing project.
+// When submitted, the variables are sent to "editprojectaction()"
+//dbconnect();
+$query = "SELECT * FROM IPM_projects where id=$id";
+$result = mysql_query($query);
+$list = mysql_fetch_array($result);
+$startyear=substr($list[startdate], 0, 4);
+$startmonth=substr($list[startdate], 5, 2);
+$startday=substr($list[startdate], 8, 2); 
+$endyear=substr($list[enddate], 0, 4);
+$endmonth=substr($list[enddate], 5, 2);
+$endday=substr($list[enddate], 8, 2);
+$Uname=stripslashes($list[name]);
+$Ucomments=stripslashes("$list[comments]");
+?>
+<form action=<?=index.php?> method=post>
+<table border=0 bordercolor=black cellspacing=0 cellpadding=2 width=90% align=center>
+<tr>
+<td colspan=2 class=header>
+Project Editor
+</td>
+</tr>
+<tr>
+<td width=38% align=right class=darker>
+Project Name:
+</td>
+<td class=lighter align=left width=62%>
+<input value="<?=$Uname?>" size=40 name=name type=text>
+</td>
+</tr>
+<tr>
+<td class=darker align=right>
+Start Date: 
+</td>
+<td class=lighter>
+<select name=startmonth size=1>
+<?
+// MySQL doesn't store pretty names for months. So this is my workaround.
+switch ($startmonth){
+case "01":
+$startmonthname="Jan";
+break;
+case "02":
+$startmonthname="Feb";
+break;
+case "03":
+$startmonthname="Mar";
+break;
+case "04":
+$startmonthname="Apr";
+break;
+case "05":
+$startmonthname="May";
+break;
+case "06":
+$startmonthname="Jun";
+break;
+case "07":
+$startmonthname="Jul";
+break;
+case "08":
+$startmonthname="Aug";
+break;
+case "09":
+$startmonthname="Sep";
+break;
+case "10":
+$startmonthname="Oct";
+break;
+case "11":
+$startmonthname="Nov";
+break;
+case "12":
+$startmonthname="Dec";
+break;
+}
+?>
+<option value=<?=$startmonth?> selected><?=$startmonthname?></option>
+<option value=<?=$startmonth?>>-----</option>
+<option value=01>Jan</option>
+<option value=02>Feb</option>
+<option value=03>Mar</option>
+<option value=04>Apr</option>
+<option value=05>May</option>
+<option value=06>Jun</option>
+<option value=07>Jul</option>
+<option value=08>Aug</option>
+<option value=09>Sep</option>
+<option value=10>Oct</option>
+<option value=11>Nov</option>
+<option value=12>Dec</option>
+</select>
+<select name=startday size=1>
+<option value=<?=$startday?> selected><?=$startday?></option>
+<option value=<?=$startday?>>-----</option>
+<option value=01>01</option>
+<option value=02>02</option>
+<option value=03>03</option>
+<option value=04>04</option>
+<option value=05>05</option>
+<option value=06>06</option>
+<option value=07>07</option>
+<option value=08>08</option>
+<option value=09>09</option>
+<option value=10>10</option>
+<option value=11>11</option>
+<option value=12>12</option>
+<option value=13>13</option>
+<option value=14>14</option>
+<option value=15>15</option>
+<option value=16>16</option>
+<option value=17>17</option>
+<option value=18>18</option>
+<option value=19>19</option>
+<option value=20>20</option>
+<option value=21>21</option>
+<option value=22>22</option>
+<option value=23>23</option>
+<option value=24>24</option>
+<option value=25>25</option>
+<option value=26>26</option>
+<option value=27>27</option>
+<option value=28>28</option> 
+<option value=29>29</option>
+<option value=30>30</option>
+<option value=31>31</option> 
+</select>
+<select name=startyear size=1>
+<option value=<?=$startyear?> selected><?=$startyear?></option>
+<option value=<?=$startyear?>>-----</option>
+<option value=2001>2001</option>
+<option value=2002>2002</option>
+<option value=2003>2003</option>
+</select>
+</td>
+</tr>
+<tr>
+<td align=right class=darker>
+Deadline: 
+</td>
+<td class=lighter>
+<select name=endmonth size=1>
+<?
+// MySQL doesn't store pretty names for months. So this is my workaround.
+switch ($endmonth){
+case "01":
+$endmonthname="Jan";
+break;
+case "02":
+$endmonthname="Feb";
+break;
+case "03":
+$endmonthname="Mar";
+break;
+case "04":
+$endmonthname="Apr";
+break;
+case "05":
+$endmonthname="May";
+break;
+case "06":
+$endmonthname="Jun";
+break;
+case "07":
+$endmonthname="Jul";
+break;
+case "08":
+$endmonthname="Aug";
+break;
+case "09":
+$endmonthname="Sep";
+break;
+case "10":
+$endmonthname="Oct";
+break;
+case "11":
+$endmonthname="Nov";
+break;
+case "12":
+$endmonthname="Dec";
+break;
+}
+?>
+<option value=<?=$endmonth?> selected><?=$endmonthname?></option>
+<option value=<?=$endmonth?>>-----</option>
+<option value=01>Jan</option>
+<option value=02>Feb</option>
+<option value=03>Mar</option>
+<option value=04>Apr</option>
+<option value=05>May</option>
+<option value=06>Jun</option>
+<option value=07>Jul</option>
+<option value=08>Aug</option>
+<option value=09>Sep</option>
+<option value=10>Oct</option>
+<option value=11>Nov</option>
+<option value=12>Dec</option>
+</select>
+<select name=endday size=1>
+<option value=<?=$endday?> selected><?=$endday?></option>
+<option value=<?=$endday?>>-----</option>
+<option value=01>01</option>
+<option value=02>02</option>
+<option value=03>03</option>
+<option value=04>04</option>
+<option value=05>05</option>
+<option value=06>06</option>
+<option value=07>07</option>
+<option value=08>08</option>
+<option value=09>09</option>
+<option value=10>10</option>
+<option value=11>11</option>
+<option value=12>12</option>
+<option value=13>13</option>
+<option value=14>14</option>
+<option value=15>15</option>
+<option value=16>16</option>
+<option value=17>17</option>
+<option value=18>18</option>
+<option value=19>19</option>
+<option value=20>20</option>
+<option value=21>21</option>
+<option value=22>22</option>
+<option value=23>23</option>
+<option value=24>24</option>
+<option value=25>25</option>
+<option value=26>26</option>
+<option value=27>27</option>
+<option value=28>28</option> 
+<option value=29>29</option>
+<option value=30>30</option>
+<option value=31>31</option> 
+</select>
+<select name=endyear size=1>
+<option value=<?=$endyear?> selected><?=$endyear?></option>
+<option value=<?=$endyear?>>-----</option>
+<option value=2001>2001</option>
+<option value=2002>2002</option>
+<option value=2003>2003</option>
+</select>
+</td>
+</tr>
+<tr valign=top>
+<td class=darker align=right>
+Comments: 
+</td>
+<td class=lighter>
+<textarea cols=40 rows=4 name=comments><?=$Ucomments?></textarea>
+</td>
+</tr>
+<tr>
+<td class=header align=center colspan=2>
+<input class=button value=Restore type=reset> <input class=button type=submit value="Update Project">
+</td>
+</tr>
+</table>
+<input type=hidden name=op value=editprojectaction><input type=hidden name=id value=<?=$id?>>
+</form>
+<?
+}
+function editprojectaction($id, $name, $startmonth, $startday, $startyear, $endmonth, $endday, $endyear, $comments) {
+// This function receives variables from "editproject()" and updated 
+// the project in the database. Then it tells you if it worked or not.
+//dbconnect();
+global index.php;
+$startdate="$startyear-$startmonth-$startday";
+$enddate="$endyear-$endmonth-$endday";
+// Format DB input
+$Fname=addslashes("$name");
+$Fcomments=addslashes("$comments");
+//
+$result = mysql_query("update IPM_projects SET name='$Fname', startdate='$startdate', enddate='$enddate', comments='$Fcomments' where id=$id");
+include ("config.php");
+listprojects();
+$Uname=stripslashes("$name");
+if ($result) {
+message("Project \"<?=$Uname?>\" Updated Successfully");
+} else {
+message("Error Updating Project");
+}
+}

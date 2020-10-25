@@ -1,0 +1,25 @@
+<{include file="db:project_manager_header.html"}>
+
+<{if "$delete_comment_auth_user" eq "$delete_comment_current_user" or $xoops_isadmin }>
+    <table class=outer>
+        <tr>
+            <th align=center>
+                <b>Are you sure you want to delete this comment</b>?
+            </th>
+        </tr>
+        <tr>
+            <td align=center class=even>
+                <a href='util.php?util_op=deletecommentaction&comment_id=<{$delete_comment_id}>&task_id=<{$delete_comment_task_id}>'>[YES]</a>
+                <a href='index.php?op=viewtask&task_id=<{$delete_comment_task_id}>'>[NO]</a>
+            </td>
+        </tr>
+    </table>
+<{else}>
+    <table class=outer>
+        <tr>
+            <th align=center>
+                Only <{$delete_comment_auth_user}> or an admin can delete this comment
+            </th>
+        </tr>
+    </table>
+<{/if}>

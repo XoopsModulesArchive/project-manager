@@ -1,0 +1,18 @@
+<{include file="db:project_manager_header.html"}>
+<{if $delete_task_authorized }>
+    <table class=outer>
+        <tr>
+            <th align=center>
+                Are you sure you want to delete the task <b>"<{$delete_task_title}>"</b>?
+            </th>
+        </tr>
+        <tr>
+            <td align=center class=even>
+                <a href='util.php?util_op=deletetaskaction&task_id=<{$delete_task_id}>&project_id=<{$delete_task_project_id}>'>[YES]</a>
+                <a href='index.php?op=projectdetail&id=<{$delete_task_project_id}>'>[NO]</a>
+            </td>
+        </tr>
+    </table>
+<{else}>
+    <{include file="db:project_manager_notauthorized.html"}>
+<{/if}>

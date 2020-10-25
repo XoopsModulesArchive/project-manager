@@ -1,0 +1,93 @@
+<{include file="db:project_manager_header.html"}>
+
+<table class=outer width='100%'>
+    <tr>
+        <th width='20%' class=head align=left>
+            <b>View Task</b>
+        </th>
+        <th width='80%' class=head align=right>
+            <{if $xoops_isadmin or $view_task_is_owner }> 
+                [<a class=itemHead href='index.php?op=confirmdeletetask&task_id=<{$view_task_row.task_id}>'>DELETE</a>] ::
+                [<a class=itemHead href='index.php?op=edittask&task_id=<{$view_task_row.task_id}>'>EDIT</a>]
+            <{/if}>
+        </th>
+    </tr>
+    <tr>
+        <td width='20%' align=right class=even>
+            <b>Project Name: </b>
+        </td>
+        <td width='80%' class=odd>
+            <a href='index.php?op=projectdetail&id=<{$view_task_row.id}>'><{$view_task_project_name}></a>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Task Name: </b>
+        </td>
+        <td class=odd>
+            <{$view_task_row.title}>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Created By: </b>
+        </td>
+        <td class=odd>
+            <{if $view_task_owner.uname }>
+                <{$view_task_owner.name}> (<{$view_task_owner.uname}>) 
+            <{else}>
+                User Removed
+            <{/if}>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Assigned To: </b>
+        </td>
+        <td class=odd>
+            <{foreach item=user from=$view_task_users }> 
+                <{$user.name}> (<{$user.uname}>)<br>
+            <{/foreach}>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Quoted Hours: </b>
+        </td>
+        <td class=odd>
+            <{$view_task_row.hours}>
+            <{if "$view.billable" eq "1" }>
+                (Billable)
+            <{else}>
+                (Not Billable)
+            <{/if}>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Priority: </b>
+        </td>
+        <td class=odd>
+            <{if $view_task_row.priority le 3 }>Low<{/if}>
+            <{if $view_task_row.priority gt 3 and $view_task_row.priority le 6 }>Med<{/if}>
+            <{if $view_task_row.priority gt 6 }>High<{/if}>
+        </td>
+    </tr>
+    <tr>
+        <td align=right class=even>
+            <b>Subtask of: </b>
+        </td>
+        <td class=odd>
+            <{ $view_task_parent }>
+        </td>
+    </tr>
+    <tr valign=top>
+        <td class=even align=right>
+            <b>Description: </b>
+        </td>
+        <td class=odd>
+            <{$view_task_row.description|nl2br}>
+        </td>
+    </tr>
+</table>
+<{$view_task_comments}>

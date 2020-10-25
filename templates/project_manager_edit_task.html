@@ -1,0 +1,88 @@
+<{include file="db:project_manager_header.html"}>
+    
+<{if $edit_task_authorized }>
+    <form action=util.php method=post>
+        <table class=outer>
+            <tr>
+                <th colspan=2 width='100%' class=head align=left>
+                    <b>Edit Task</b>
+                </th>
+            </tr>
+            <tr>
+                <td width='20%' align=right class=even>
+                    <b>Project Name: </b>
+                </td>
+                <td width='80%' class=odd>
+                    <a class=biglink href='index.php?op=projectdetail&id=<{$edit_task_row.id}>'><{$edit_task_project_name}></a>
+                </td>
+            </tr>
+            <tr>
+                <td align=right class=even>
+                    <b>Task Name: </b>
+                </td>
+                <td class=odd>
+                    <input value="<{$edit_task_row.title}>" name=title size=50 maxlength=80 type=text>
+                </td>
+            </tr>
+            <tr>
+                <td align=right class=even>
+                    <b>Assigned To: </b>
+                </td>
+                <td class=odd>
+                    <select name="person[]" multiple=multiple size=8>
+                        <{$edit_task_user_options}>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td align=right class=even>
+                    <b>Quoted Hours: </b>
+                </td>
+                <td class=odd>
+                    <input type=text name=hours size=10 maxlength=10 value='<{$edit_task_row.hours}>'>
+                    <{$edit_task_billable}>
+                </td>
+            </tr>
+            <tr>
+                <td align=right class=even>
+                    <b>Priority: </b>
+                </td>
+                <td class=odd>
+                    <select name=priority size=1>
+                        <{$edit_task_priority_options}>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td align=right class=even>
+                    <b>Subtask of: </b>
+                </td>
+                <td class=odd>
+                    <select name=parent_id size=1>
+                        <{$edit_task_parent}>
+                        <{$edit_task_dropdown}>
+                    </select>
+                </td>
+            </tr>
+            <tr valign=top>
+                <td class=even align=right>
+                    <b>Description: </b>
+                </td>
+                <td class=odd>
+                    <textarea cols=80 rows=4 name=description><{$edit_task_row.description}></textarea>
+                </td>
+            </tr>
+            <tr>
+                <th class=head align=center colspan=2>
+                    <input class=button value=Restore type=reset> <input class=button type=submit value="Update Task">
+                </th>
+            </tr>
+        </table>
+    
+        <input type=hidden name=util_op value=edittaskaction>
+        <input type=hidden name=id value='<{$edit_task_row.id}>'>
+        <input type=hidden name=task_id value='<{$edit_task_row.task_id}>'>
+    </form>
+<{else}>
+    <{include file="db:project_manager_notauthorized.html"}>
+<{/if}>

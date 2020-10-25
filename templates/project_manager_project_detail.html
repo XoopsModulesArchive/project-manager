@@ -1,0 +1,215 @@
+<{include file="db:project_manager_header.html"}>
+
+<{foreach item=row from=$project_detail_row }>
+    <{assign var=my_id value=$row.id }>
+
+    <table class=outer width='100%'>
+        <tr>
+            <th class=head width='50%'>
+                Project: <b><{$row.name}><b>
+            </th>
+            <th align=right class=head width='50%'>
+                <{insert name=percentComplete id=$my_id assign=project_detail_percent_complete }>
+                <{if $row.completed }>
+                    [<a class=itemHead href='util.php?util_op=reactivateprojectaction&id=<{$my_id}>'>REACTIVATE PROJECT</a>] ::
+                <{elseif "$project_detail_percent_complete" eq "100"}>
+                    [<a class=itemHead href='util.php?util_op=completeprojectaction&id=<{$my_id}>'>COMPLETE PROJECT</a>] ::
+                <{/if}>
+                [<a class=itemHead href='index.php?op=addtask&id=<{$my_id}>&return=listprojects'>ADD TASK</a>]
+            </th>
+        </tr>
+        <tr class=odd>
+            <td width=50%>
+                <b>Project Start: </b>
+                <{insert name=prettyDate id=$row.startdate }>
+            </td>
+            <td width=50%>
+                <b>Project Deadline: </b>
+                <{insert name=prettyDate id=$row.enddate }>
+            </td>
+        </tr>
+        <tr valign=top>
+            <td width=50% class=odd>
+                <table class=inner>
+                    <tr valign=top>
+                        <td class=even width='90%'>
+                            <{if "$ordertodo" eq "prioritydown" }>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=priorityup&orderdone=<{$orderdone}>'><b>Open Tasks</b></a>
+                            <{else}>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=prioritydown&orderdone=<{$orderdone}>'><b>Open Tasks</b></a>
+                            <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                            <{if "$ordertodo" eq "persondown" }>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=personup&orderdone=<{$orderdone}>'><b>User(s)</b></a>
+                            <{else}>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=persondown&orderdone=<{$orderdone}>'><b>User(s)</b></a>
+                            <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                            <{if "$ordertodo" eq "prioritydown" }>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=priorityup&orderdone=<{$orderdone}>'><b>Priority</b></a>
+                            <{else}>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=prioritydown&orderdone=<{$orderdone}>'><b>Priority</b></a>
+                            <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                            <{if "$ordertodo" eq "commentsdown" }>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=commentsup&orderdone=<{$orderdone}>'><b>Comments</b></a>
+                            <{else}>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=commentsdown&orderdone=<{$orderdone}>'><b>Comments</b></a>
+                            <{/if}>
+                        </td>
+                        <td class=even align=center width='10%'>
+                            <{if "$ordertodo" eq "hoursdown" }>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=hoursup&orderdone=<{$orderdone}>'><b>Hours</b></a>
+                            <{else}>
+                                <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=hoursdown&orderdone=<{$orderdone}>'><b>Hours</b></a>
+                            <{/if}>
+                        </td>
+                        <td class=even width='10%' align=center>
+                             <a><b>Action</b></a>
+                        </td>
+                    </tr>
+                    <{if "$ordertodo" eq "nameup" }>
+                        <{assign var=todo_order value="title asc" }>
+                    <{elseif "$ordertodo" eq "namedown" }>
+                        <{assign var=todo_order value="title desc" }>
+                    <{elseif "$ordertodo" eq "commentsup" }>
+                        <{assign var=todo_order value="comments asc" }>
+                    <{elseif "$ordertodo" eq "commentsdown" }>
+                        <{assign var=todo_order value="comments desc" }>
+                    <{elseif "$ordertodo" eq "personup" }>
+                        <{assign var=todo_order value="person asc" }>
+                    <{elseif "$ordertodo" eq "persondown" }>
+                        <{assign var=todo_order value="person desc" }>
+                    <{elseif "$ordertodo" eq "priorityup" }>
+                        <{assign var=todo_order value="priority asc" }>
+                    <{elseif "$ordertodo" eq "prioritydown" }>
+                        <{assign var=todo_order value="priority desc" }>
+                    <{elseif "$ordertodo" eq "hoursup" }>
+                        <{assign var=todo_order value="hours asc" }>
+                    <{elseif "$ordertodo" eq "hoursdown" }>
+                        <{assign var=todo_order value="hours desc" }>
+                    <{else}>
+                        <{assign var=todo_order value="person asc" }>
+                    <{/if}>
+                    <!--call the full TODO list for this project ordered my todo_order-->
+                    <{insert name=taskList id=$my_id status=1 order=$todo_order }>
+                    <tr>
+                        <td colspan=6>
+                            <hr>
+                        </td>
+                    </tr>
+                    <tr valign=top class=todolist>
+                        <td colspan=4>
+                            <i>Total Hours Remaining on Project</i>
+                        </td>
+                        <td align=center>
+                            <{insert name=hoursToDo id=$my_id }>
+                        </td>
+                        <td>
+                            &nbsp;
+                        </td>
+                    </tr>
+                </table>
+                <br><br>
+            </td>
+
+            <!-- END OF TODO LIST SIDE- BEGIN FINISHED SIDE-->
+            <td class=odd>
+                <table class=inner>
+                    <tr valign=top>
+                        <td class=even width='90%'>
+                             <{if "$orderdone" eq "namedown" }>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=<{$ordertodo}>&orderdone=nameup'><b>Finished Items</b></a>
+                             <{else}>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=<{$ordertodo}>&orderdone=namedown'><b>Finished Items</b></a>
+                             <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                             <{if "$ordertodo" eq "persondown" }>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=personup'><b>User(s)</b></a>
+                             <{else}>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=persondown'><b>User(s)</b></a>
+                             <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                             <{if "$ordertodo" eq "prioritydown" }>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=priorityup'><b>Priority</b></a>
+                             <{else}>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=prioritydown'><b>Priority</b></a>
+                             <{/if}>
+                        </td>
+                        <td class=even width='10%'>
+                             <{if "$ordertodo" eq "commentsdown" }>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=commentsup'><b>Comments</b></a>
+                             <{else}>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=$orderdone&orderdone=commentsdown'><b>Comments</b></a>
+                             <{/if}>
+                        </td>
+                        <td class=even align=center width='10%'>
+                             <{if "$ordertodo" eq "hoursdown" }>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=<{$orderdone}>&orderdone=hoursup'><b>Hours</b></a>
+                             <{else}>
+                                  <a href='index.php?op=projectdetail&id=<{$my_id}>&ordertodo=<{$orderdone}>&orderdone=hoursup'><b>Hours</b></a>
+                             <{/if}>
+                        </td>
+                        <td class=even width='10%' align=center>
+                             <a><b>Action</b></a>
+                        </td>
+                    </tr>
+                    <{if "$orderdone" eq "nameup" }>
+                        <{assign var=done_order value="title asc" }>
+                    <{elseif "$orderdone" eq "namedown" }>
+                        <{assign var=done_order value="title desc" }>
+                    <{elseif "$orderdone" eq "commentsup" }>
+                        <{assign var=done_order value="comments asc" }>
+                    <{elseif "$orderdone" eq "commentsdown" }>
+                        <{assign var=done_order value="comments desc" }>
+                    <{elseif "$orderdone" eq "personup" }>
+                        <{assign var=done_order value="person asc" }>
+                    <{elseif "$orderdone" eq "persondown" }>
+                        <{assign var=done_order value="person desc" }>
+                    <{elseif "$orderdone" eq "priorityup" }>
+                        <{assign var=done_order value="priority asc" }>
+                    <{elseif "$orderdone" eq "prioritydown" }>
+                        <{assign var=done_order value="priority desc" }>
+                    <{elseif "$orderdone" eq "hoursup" }>
+                        <{assign var=done_order value="hours asc" }>
+                    <{elseif "$orderdone" eq "hoursdown" }>
+                        <{assign var=done_order value="hours desc" }>
+                    <{else}>
+                        <{assign var=done_order value="person asc" }>
+                    <{/if}>
+                    <!--call the full DONE list for this project ordered my todo_order-->
+                    <{insert name=taskList id=$my_id status=0 order=$done_order }>
+                    <tr>
+                        <td colspan=6>
+                            <hr>
+                        </td>
+                    </tr>
+                    <tr valign=top class=todolist>
+                        <td colspan=4>
+                            <i>Total Hours Completed</i>
+                        </td>
+                        <td align=center>
+                            <{insert name=hoursDone id=$my_id }>
+                        </td>
+                        <td colspan=1>
+                            &nbsp;
+                         </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr valign=top>
+            <th colspan=2 class=head>
+                <{insert name=drawTimeAndProgressBars id=$my_id}>
+            </th>
+        </tr>
+    </table>
+    <br><br>
+<{/foreach}>
+
+

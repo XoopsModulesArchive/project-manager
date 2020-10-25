@@ -1,0 +1,36 @@
+<{include file="db:project_manager_header.html"}>
+<{if "$edit_comment_auth_user" eq "$edit_comment_current_user" or $xoops_isadmin }>
+    <form action=util.php method=post>
+        <table class=outer>
+            <tr>
+                <th width='100%' colspan=2 class=head align=left>
+                    <b>Editing Comment</b>
+                </th>
+            </tr>
+            <tr valign=top>
+                <td width='38%' align=right class=even>
+                    <b>Comment: </b>
+                </td>
+                <td width='62%' class=odd>
+                    <textarea cols=60 rows=10 name=comment><{$edit_comment_formatted_comment}></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td class=head align=center colspan=2>
+                    <input class=button type=reset> <input class=button type=submit value="Update Comment">
+                </td>
+            </tr>
+        </table>
+        <input type=hidden name=util_op value=editcommentaction>
+        <input type=hidden name=comment_id value='<{$edit_comment_id}>'>
+        <input type=hidden name=task_id value='<{$edit_comment_task_id}>'>
+    </form>
+<{else}>
+    <table class=outer>
+        <tr>
+            <td class=head>
+                Only <{$auth_user}> or an admin is allowed to edit this comment
+            </td>
+        </tr>
+    </table>
+<{/if}>

@@ -1,0 +1,11 @@
+- create a bare module skeleton (done)
+- plug in the IPM code (done)
+- make IPM code work with XOOPS authentication (done)
+- separate project management into the admin area (done)
+- allow multiple users to be assigned to one task (done)
+- fix up "task finish" to handle children tasks properly (done)
+- re-add popups (done)
+- make *action methods redirect back to the index page to prevent 
+	reloading the page and resubmitting the results (done)
+- add notification support (done)
+- make "ongoing" projects that don't have an end date (not started)

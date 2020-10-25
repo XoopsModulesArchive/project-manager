@@ -1,0 +1,25 @@
+<link rel=stylesheet type=text/css href='<{$xoops_url}>/modules/project-manager/style/default.css'>
+<script type='text/javascript' src='<{$xoops_url}>/modules/project-manager/popups.js'></script>
+
+<table width=100% border=0 cellspacing=0 cellpadding=4>
+    <tr>
+        <td class=smaller align=left>
+            Logged in as: <b><{$xoops_user}></b>
+        </td>
+        <td class=smaller align=right>
+            [<a href=index.php?op=mytasks>MY TASKS</a>] ::
+            [<a href=index.php?op=listprojects>PROJECTS</a>]
+            <img src=$_XOOPS_project_manager_image_dir/spacer.gif width=8 height=1 border=0>
+        </td>
+    </tr>
+</table>
+<{if $project_manager_message }>
+    <table width=100% class=outer>
+        <tr>
+            <th align=center>
+                <{$project_manager_message}>
+            </th>
+        </tr>
+    </table>
+<{/if}>
+<div id=\"object1\" style=\"showing\">&nbsp;</div>

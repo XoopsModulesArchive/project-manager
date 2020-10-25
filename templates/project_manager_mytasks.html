@@ -1,0 +1,90 @@
+<{if $xoops_user = $user_info }>
+    <{include file="db:project_manager_header.html"}>
+    <table class=outer>
+        <tr valign=top>
+            <th class=head colspan=2>
+                User Details for <b><{$xoops_user}></b>
+            </th>
+        </tr>
+        <tr valign=top>
+            <td class=even width=30% align=right>
+                Username: <br>
+                Total Projects: <br>
+                Total Open Tasks: <br>
+            </td>
+            <td class=odd width=70% align=left>
+                <b><{$xoops_user}></b><br>
+                <b><{$project_total}></b><br>
+                <b><{$task_total}></b><br>
+            </td>
+    </tr>
+    </table>
+    <br>
+    <table class=outer>
+        <tr>
+            <th align=center>
+                <{if $task_status }>
+                    Showing Open Tasks
+                <{else}>
+                    Showing Completed Tasks
+                <{/if}>
+            </th>
+        </tr>
+        <tr>
+            <td align=center>
+                (Hours in bold are billable)
+            </td>
+        </tr>
+    </table>
+    <br>
+    <{foreach item=project from=$projects }>
+        <table class=outer>
+            <tr valign=top>
+                <th class=head width='55%' border=0>
+                    PROJECT: <br><b><a class=itemHead href='index.php?op=projectdetail&id=<{$project.id}>'><{$project.name}></a></b><br>
+                </th>
+                <th nowrap class=head align=right>
+                    <{insert name=drawTimeAndProgressBars id=$project.id }>
+                </th>
+                <th nowrap width=10% class=head align=center>
+                    [<a class=itemHead href='index.php?op=addtask&id=<{$project.id}>&return=mytasks'>ADD TASK</a>]
+                </th>
+            </tr>
+        </table>
+        <table class=outer>
+            <tr class=even>
+                <td align=center width='10%'>
+                    HOURS
+                </td>
+                <td align=center width='10%'>
+                    COMMENTS
+                </td>
+                <td align=center width='20%'>
+                    TITLE
+                </td>
+                <td align=center>
+                    DESCRIPTION
+                </td>
+                <td width='10%' align=center>
+                    ACTION
+                </td>
+            </tr>
+            <{insert name=userTaskList project_id=$project.id status=$task_status }>
+        </table><br>
+    <{/foreach}>
+    <table class=outer>
+        <tr>
+            <td class=head align=center>
+                <{if $task_status }>
+                    <a href='index.php?op=mytasks&status=0'>Show Completed Tasks</a>
+                <{else}>
+                    <a href='index.php?op=mytasks&status=1'>Show Open Tasks</a>
+                <{/if}>
+            </td>
+        </tr>
+    </table>
+    <br>
+
+    <{include file='db:system_notification_select.html'}>
+
+<{/if}>
